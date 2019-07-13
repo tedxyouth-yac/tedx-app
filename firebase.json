@@ -1,16 +1,15 @@
 {
   "hosting": {
     "public": "public",
+    "target": "app",
+
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+        {"source": "/submit", "function": "submit_form"}
     ]
   }
 }

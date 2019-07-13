@@ -1,20 +1,319 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TEDxYouth@LincolnStreet Application</title>
-  </head>
-  <body style="background-color: #F9E3E1; ">
-<!--    <div style="/*-webkit-overflow-scrolling: touch; */overflow-y: scroll; width: 100%; height: 100%;">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScI4HgdES75Gj63lZtbATy9m4PoOkCpeOcLoOXGNowYJEyHEw/viewform?embedded=true" style="position:fixed; top:13px; left:0px; bottom:0px; right:0px; width:100%; height:100%; border:none; margin:0; padding:0; z-index:999999;" marginheight="0" marginwidth="0">Loading...</iframe>
+    <title>TEDxYouth@LincolnStreet Applications</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nod-validate@2.0.12/nod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8.13.4/dist/sweetalert2.all.min.js"></script>
+    
+    <style>
+        h5 {
+            margin-bottom: 0px;
+        }
+        
+        .err {
+            color: red;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <h3 v-html="format(title)"></h3>
+        <p v-html="description"></p>
+        <br><br>
+        <div v-for="item in form">
+            <div v-if="item.type == 'text'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <div class="input-field col s12">
+                        <input data-parsley-inputs :id="item.id" type="text" :placeholder="item.inline_text" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required.">
+                    </div>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'email'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <div class="input-field col s12">
+                        <input data-parsley-inputs :id="item.id" type="email" :placeholder="item.inline_text" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required.">
+                    </div>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'textarea'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <div class="input-field col s12">
+                        <textarea data-parsley-inputs :id="item.id" class="materialize-textarea" :placeholder="item.inline_text" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'number'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <div class="input-field col s12">
+                        <input data-parsley-inputs :id="item.id" type="number" :placeholder="item.inline_text" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required.">
+                    </div>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'check'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <p>
+                        <label>
+                            <input data-parsley-inputs type="checkbox" :id="item.id" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required.">
+                            <span>{{ item.inline_text }}</span>
+                        </label>
+                    </p>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'radio'">
+                <div class="row">
+                    <h5 v-if="item.title">{{ item.title }}</h5>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                    <p v-for="(_i, i) in item.inline_text">
+                        <label>
+                            <input :class="'n-' + item.group" data-parsley-inputs :id="item.id[i]" :name="item.group" type="radio" :required="(!item.optional) ? 'true' : 'false'" data-parsley-required-message="This field is required.">
+                            <span>{{ item.inline_text[i] }}</span>
+                        </label>
+                    </p>
+                    <span :class="'n-error-' + item.group"></span>
+                </div>
+            </div>
+            <div v-else-if="item.type == 'title'">
+                <div class="row">
+                    <h4 v-if="item.title">{{ item.title }}</h4>
+                    <p v-if="item.subtitle">{{ item.subtitle }}</p>
+                </div>
+            </div>
+        </div>
+
+        <a id="submit" onclick="submit()" class="waves-effect waves-light btn">submit</a>
+        <br><br><br>
+        <form style="display: none;" action="/submit" method="post" id="__sform">
+            <input type="text" name="__sinput" id="__sinput">
+        </form>
     </div>
+    
+    <script>
+        if (window.location.hash == "#submitted") {
+			Swal.fire({title: "Submitted!", text: "You're good to go! You should recieve a confirmation email from applications@tedxyouthls.com soon (check your Junk/Spam, and mark us as not Junk if we're there)! If you don't by the end of the day, please email us!", type: "success"});
+			window.location.hash = "";
+		}
+    
+        var app = new Vue({
+            el: '#app',
+            data: {
+                title: "TEDxYouth@LincolnStreet Speaker Application",
+                description: `<p>Thank you for considering applying as a speaker at TEDxYouth@LincolnStreet for 2019! Please answer the questions below. 
+                    To look at our talks from 2017, go to https://goo.gl/rg8QSb. To look at our talks from 2018, go https://goo.gl/o2yFDT. 
+                    -- ADD 2019 TALKS -- If you have any questions, please email hello@tedx.app.
+                    <br>The application deadline is -- DEADLINE --. Please, only one application per person.</p>`,
+                form: [{
+                    type: "title",
+                    title: "The Basics",
+                    subtitle: "Let's start by getting to know you a little bit."
+                }, {
+                    type: "text",
+                    title: "Full Name",
+                    id: "name",
+                    inline_text: "John Doe"
+                },
+                {
+                    type: "text",
+                    title: "School",
+                    id: "school",
+                    inline_text: "Hogwarts"
+                },
+                {
+                    type: "radio",
+                    title: "Grade",
+                    subtitle: "If you want an exemption to our grade 9-12 policy, email applications@tedxyouthls.com.",
+                    group: "grade",
+                    id: ["g9", "g10", "g11", "g12"],
+                    inline_text: ["9", "10", "11", "12"]
+                },
+                {
+                    type: "email",
+                    title: "Email",
+                    subtitle: "Please use an email you'll check regularly. You'll get a confirmation email here shortly after submitting.",
+                    id: "email",
+                    inline_text: "thisis@me.com"
+                },
+                {
+                    type: "email",
+                    title: "Confirm Email",
+                    subtitle: "Please enter your email again.",
+                    id: "cemail",
+                    validate: "email",
+                    inline_text: "thisis@me.com"
+                },
+                {
+                    type: "text",
+                    title: "Textable Phone Number",
+                    id: "phone",
+                    inline_text: "(123)-456-7890"
+                },
+                {
+                    type: "textarea",
+                    title: "Why do you want to speak at TEDxYouth@LincolnStreet?",
+                    id: "why",
+                    inline_text: "long answer textbox"
+                },
+                {
+                    type: "textarea",
+                    title: "What are you going to be talking about?",
+                    subtitle: "Give us a basic idea about what you want to talk about, along with some background on the topic itself. Why does it matter to youth and our community as a whole?",
+                    id: "what",
+                    inline_text: "A thorough, at-least-paragraph length response is expected."
+                },
+                {
+                    type: "textarea",
+                    title: "Outline your talk.",
+                    subtitle: "Give us a rough outline of your talk from start to finish: how you'll start your talk and engage the viewer, the major talking points/stories/ideas you'll be touching on (with rough transitions), and what you'll leave the audience with.",
+                    id: "outline",
+                    inline_text: "Paragraph and bullet form accepted."
+                },{
+                    type: "textarea",
+                    title: "What makes your topic unique, both in general and compared to past talks at our conference?",
+                    id: "unique",
+                    inline_text: "A thorough, at-least-paragraph length response is expected."
+                },
+                {
+                    type: "title",
+                    title: "TEDx Theme -- '{{ THEME }}'",
+                    subtitle: `The theme of a TEDx event is the central idea that all talks at the event must be centered around. This year, our theme is "Shatter", which is an extremely broad theme that allows for just about every talk topic, from youth activism, to community initiatives, to breakthrough ideas, to rebellion against the status quo, and more - because all of these require you to "shatter" the status quo and bring forth something new into the world. Even if you can't figure out how to adapt your idea to fit this theme, you should apply anyway, and just enter that you can't figure out how to link to our theme in the box below. If your idea seems worthwhile, we'll help you in getting it to fit in.`
+                },
+                {
+                    type: "textarea",
+                    title: "How does your topic fit into our conference's theme, '{{ THEME }}'?",
+                    id: "fit",
+                    inline_text: "A thorough, at-least-paragraph length response is expected."
+                },
+                {
+                    type: "title",
+                    title: "Final Thoughts",
+                },
+                {
+                    type: "check",
+                    id: "cert",
+                    inline_text: "I certify that, if selected, I will be able to attend speaker meetings in downtown Hillsboro on occasional Tuesdays at 7 PM, as well as attend the actual conference on {{ CONFERENCE DATE }}."
+                },
+                {
+                    type: "check",
+                    id: "transport",
+                    inline_text: "I will need transportation assistance for my interview and our practices in Downtown Hillsboro if selected (for Hillsboro students only, does not weigh against application)",
+                    optional: true
+                },
+                {
+                    type: "textarea",
+                    id: "comments",
+                    title: "Any additional comments?",
+                    inline_text: "I love TEDx!",
+                    optional: true
+                }],
+            },
+            methods: {
+                format: ((text) => {
+                    return text.replace("@", "@&#8203;");
+                })
+            }
+        });
+        
+        var n = nod();
 
--->
-
-<div style="overflow-y: auto !important; -webkit-overflow-scrolling: touch !important; height: 93vh;">
-<iframe src="https://docs.google.com/forms/d/e/1FAIpQLScD6N5VKsiwzlQ1Br_iwCD1OJXmoY9fpur0TH0zsu3rrTXLZQ/viewform?embedded=true" style="width: 100%; height: 1000vh; display: block; overflow-y: scroll; -webkit-overflow-scrolling: touch;" frameBorder=0></iframe>
-</div>
-
-  </body>
+        n.configure({
+            submit: '#submit',
+            disableSubmit: true,
+            errorMessageClass: 'err'
+        });
+        
+        for (let el of app.form) {
+            if (el.optional != true) {
+                if (el.type == "text" || el.type == "textarea") {
+                    n.add([{
+                        selector: '#' + el.id,
+                        validate: 'presence',
+                        errorMessage: 'You need to fill this out.'
+                    }]);
+                } else if (el.type == "email") {
+                    if (el.validate != undefined) {
+                        n.add([{
+                            selector: '#' + el.id,
+                            validate: ["presence", "email", "same-as:#" + el.validate],
+                            errorMessage: Array.from({length: 3}, (v, i) => 'This needs to be a valid email, and it needs to be the same as the first.')
+                        }]);
+                    } else {
+                        n.add([{
+                            selector: '#' + el.id,
+                            validate: ["presence", "email"],
+                            errorMessage: Array.from({length: 2}, (v, i) => 'This needs to be a valid email.')
+                        }]);
+                    }
+                    
+                } else if (el.type == "number") {
+                    n.add([{
+                        selector: '#' + el.id,
+                        validate: ['presence', 'integer', 'min-value:0'],
+                        errorMessage: Array.from({length: 3}, (v, i) => 'You need to fill this out with a positive integer.')
+                    }]);
+                } else if (el.type == "check") {
+                    n.add([{
+                        selector: '#' + el.id,
+                        validate: "checked",
+                        errorMessage: 'This must be checked.'
+                    }]);
+                } else if (el.type == "radio") {
+                    n.add([{
+                        selector: '.n-' + el.group,
+                        validate: "some-radio",
+                        errorMessage: 'Please select one.'
+                    }]);
+                    
+                    n.setMessageOptions({
+                        selector: '.n-' + el.group,
+                        errorSpan: '.n-error-' + el.group
+                    });
+                }
+            }
+        }
+        
+        function submit() {
+            n.performCheck();
+            if (n.areAll('valid')) {
+                let data = {};
+                for (let el of app.form) {
+                    if (typeof el.id == "string") {
+                        if (el.type == "check") {
+                            data[el.id] = document.getElementById(el.id).checked;
+                        } else {
+                            data[el.id] = document.getElementById(el.id).value;
+                        }
+                    } else if (typeof el.id == "object") {
+                        console.log(el);
+                        data[el.group] = document.querySelector(`input[name='${el.group}']:checked`).id;
+                    }
+                }
+                
+                document.getElementById("__sinput").value = JSON.stringify(data);
+                document.getElementById("__sform").submit();
+            } else {
+                Swal.fire({
+                    title: "Eek!",
+                    text: "You're missing something! Check for errors in the form.",
+                    type: 'error',
+                });
+            }
+        }
+        
+    </script>
+</body>
 </html>
